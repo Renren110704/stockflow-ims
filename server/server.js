@@ -27,10 +27,14 @@ async function syncIndexes() {
   }
 }
 
-connectDB().then(async () => {
-  await syncIndexes();
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-  startLowStockAlertJob();
-});
+connectDB()
+  .then(async () => {
+    await syncIndexes();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+    startLowStockAlertJob();
+  })
+  // The error is already logged in config/db.js; without a database the
+  // server can't do anything useful, so stop here (same as before).
+  .catch(() => process.exit(1));

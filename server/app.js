@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
+import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -14,6 +15,11 @@ import purchaseOrderRoutes from './routes/purchaseOrderRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 
 const app = express();
+
+// The deployed API sits behind the hosting provider's proxy. Trusting it
+// lets Express (and the rate limiter) see each visitor's real IP address
+// instead of treating every visitor as the same one.
+app.set('trust proxy', 1);
 
 // Sets a standard set of protective HTTP response headers (X-Content-Type-Options,
 // X-Frame-Options, etc.). Using the defaults here rather than hand-tuning
@@ -43,6 +49,19 @@ app.use(mongoSanitize());
 // Simple health check — useful for confirming the server + DB are up.
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'API is running' });
+});
+
+// Make sure the database is connected before any route runs. The
+// connection is cached (see config/db.js), so this is instant after the
+// first request. Needed where the server is started on demand rather than
+// through server.js.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use('/api/auth', authRoutes);

@@ -1,0 +1,25 @@
+{
+  "name": "inventory-management-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend API for the Inventory Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed:admin": "node scripts/promoteAdmin.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5",
+    "dotenv": "^16.4.7",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.5.0",
+    "express-mongo-sanitize": "^2.2.0",
+    "node-cron": "^3.0.3"
+  }
+}

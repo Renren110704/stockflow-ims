@@ -1,0 +1,38 @@
+/* Tailwind is loaded in two pieces, skipping its preflight reset:
+   MUI's <CssBaseline/> (mounted in ThemeModeContext) already normalizes
+   margins, box-sizing and typography, so importing Tailwind's own
+   preflight on top would just be a second, conflicting reset. Utilities
+   are all we need from Tailwind — layout, spacing, responsive variants. */
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';
+
+/* Mirrors the MUI theme's brand color (see ThemeModeContext.jsx) so plain
+   Tailwind utility classes (used for layout/structure, not component
+   styling) stay visually consistent with MUI components without either
+   system reaching into the other's internals. */
+@theme {
+  --color-brand-50: #eef4f6;
+  --color-brand-100: #dceeea;
+  --color-brand-500: #2f6f6b;
+  --color-brand-600: #1d4e4a;
+  --color-brand-900: #153033;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Respect reduced-motion preferences for the few transitions we do use
+   (sidebar hover states, theme toggle). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

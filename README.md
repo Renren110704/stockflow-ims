@@ -1,16 +1,60 @@
-# React + Vite
+# StockFlow — Inventory Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Final project by **Albina, Baure, De Ocampo, Dula, Lachica**.
 
-Currently, two official plugins are available:
+A full-stack (MERN) inventory system for tracking products, stock levels
+across locations, transactions, purchase orders and reports.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
+- Email/password sign-up with OTP verification, Google sign-in, password reset
+- Role-based access (admin / staff); admin-only user management
+- Products with images, QR codes, CSV import/export and bulk category changes
+- Categories, locations and per-location stock levels
+- Stock-in / stock-out transactions with a full audit trail
+- Purchase orders with receiving
+- Dashboard, reports, printable tables and barcode/QR scanning
+- Archive (soft delete), light/dark mode, optional daily low-stock email alerts
 
-## React Compiler
+## Tech stack
+**Frontend:** React 19, Vite, MUI, Tailwind CSS, React Router, Recharts, Axios
+**Backend:** Node.js, Express, MongoDB (Mongoose), JWT, Helmet, express-rate-limit
+**Services:** Brevo (email), Cloudinary (images), Google Identity
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
+1. Install dependencies:
+   ```bash
+   npm install
+   npm run server:install
+   ```
+2. Copy `.env.example` → `.env` and `server/.env.example` → `server/.env`,
+   then fill in at least `MONGO_URI` and `JWT_SECRET`.
+3. Run the backend and frontend (two terminals):
+   ```bash
+   npm run server:dev
+   npm run dev
+   ```
+4. Register an account, then promote it to admin:
+   ```bash
+   cd server
+   npm run seed:admin -- you@example.com
+   ```
 
-## Expanding the ESLint configuration
+## Scripts
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the Vite dev server (http://localhost:5173) |
+| `npm run build` | Production build of the frontend |
+| `npm run lint` | Lint the frontend |
+| `npm run server:dev` | Start the API with auto-reload (http://localhost:5000) |
+| `npm run server:start` | Start the API |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+`GET /api/health` reports whether the API and database are reachable.
+
+## Project structure
+```
+src/      React app (pages, components, services, hooks, utils)
+server/   Express API (routes, controllers, models, middleware, services)
+```
+
+## Testing
+See [TESTING.md](TESTING.md) for the manual test checklist.

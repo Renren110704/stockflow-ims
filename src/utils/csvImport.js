@@ -10,7 +10,7 @@ function parseCSVRows(text) {
 
   // Normalize line endings so \r\n from Excel-exported files doesn't
   // leave stray \r characters in the last cell of each row.
-  const input = text.replace(/\r\n/g, '\n');
+  const input = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
 
   for (let i = 0; i < input.length; i += 1) {
     const char = input[i];
@@ -66,6 +66,9 @@ const HEADER_ALIASES = {
   'image url': 'imageUrl',
 };
 
+// Undoes the formula guard csvExport.js adds, so exported files round-trip.
+const stripFormulaGuard = (value) => (/^'[=+\-@]/.test(value) ? value.slice(1) : value);
+
 // Parses a CSV File into an array of product-shaped row objects ready
 // for productService.bulkImportProducts. Throws with a clear message
 // if the file has no recognizable header row.
@@ -87,7 +90,7 @@ export async function parseProductsCSV(file) {
   return rows.slice(1).map((cells) => {
     const obj = {};
     fields.forEach((field, idx) => {
-      if (field) obj[field] = (cells[idx] ?? '').trim();
+        if (field) obj[field] = stripFormulaGuard((cells[idx] ?? '').trim());
     });
     return obj;
   });

@@ -1,16 +1,22 @@
 import { TYPE_LABEL, describeLocation } from './transactionLabels';
 
+// Text cells starting with these characters are evaluated as formulas by
+// Excel/Sheets (CSV injection), so they get a leading apostrophe.
+const FORMULA_TRIGGER = /^[=+\-@\t\r]/;
+
 const escapeCell = (value) => {
-  const str = String(value ?? '');
+  let str = String(value ?? '');
+  if (typeof value === 'string' && FORMULA_TRIGGER.test(str)) str = `'${str}`;
   // Quote any cell containing a comma, quote, or newline, per CSV convention.
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  return /[",\r\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
 };
 
 // Builds a CSV from a header row + row arrays and triggers a browser
 // download. Client-side only — the data is already on the page.
 function downloadCSV(headers, rows, filename) {
   const csvContent = [headers.join(','), ...rows.map((r) => r.map(escapeCell).join(','))].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  // The BOM tells Excel the file is UTF-8, so ₱ and accented names display correctly.
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');

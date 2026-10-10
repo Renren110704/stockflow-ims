@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import mongoose from 'mongoose';
 
 import app from './app.js';
 import connectDB from './config/db.js';
@@ -38,10 +39,26 @@ async function syncIndexes() {
   }
 }
 
+let server;
+
+// Lets in-flight requests finish and closes the MongoDB connection before
+// exiting on Ctrl+C or when the host stops the process (SIGTERM).
+function shutdown(signal) {
+  console.log(`${signal} received, shutting down...`);
+  // Force-exit if open connections keep the server from closing.
+  setTimeout(() => process.exit(1), 10000).unref();
+  const closeDb = () => mongoose.connection.close().finally(() => process.exit(0));
+  if (server) server.close(closeDb);
+  else closeDb();
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
 connectDB()
   .then(async () => {
     await syncIndexes();
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
     startLowStockAlertJob();

@@ -1,10 +1,10 @@
 import cron from 'node-cron';
 import { runLowStockAlertCheck } from './lowStockAlertService.js';
 
-// Off by default: a fresh checkout of this project has no SMTP
-// credentials configured, and a class/demo environment shouldn't silently
-// start emailing on a schedule. Set ENABLE_LOW_STOCK_ALERTS=true (and the
-// SMTP_* vars) in server/.env to turn it on.
+// Off by default: a fresh checkout of this project has no email provider
+// configured, and a class/demo environment shouldn't silently start
+// emailing on a schedule. Set ENABLE_LOW_STOCK_ALERTS=true (and the
+// BREVO_* vars) in server/.env to turn it on.
 export function startLowStockAlertJob() {
   if (process.env.ENABLE_LOW_STOCK_ALERTS !== 'true') {
     console.log('[lowStockAlertJob] Disabled (set ENABLE_LOW_STOCK_ALERTS=true to enable).');

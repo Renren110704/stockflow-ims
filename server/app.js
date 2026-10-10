@@ -27,10 +27,20 @@ app.set('trust proxy', 1);
 // scripts of its own) and doesn't need CSP customization.
 app.use(helmet());
 
-// Only allow the configured frontend origin to make credentialed requests.
+// Allow one or more frontend origins, comma-separated in CLIENT_URL.
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin(origin, callback) {
+      // No Origin header = non-browser clients (mobile apps, curl).
+      // CORS only protects browsers, so these are let through.
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
     credentials: true,
   })
 );

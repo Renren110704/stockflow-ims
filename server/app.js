@@ -46,9 +46,14 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 // (e.g. sending {"email": {"$ne": null}} to bypass a query) work.
 app.use(mongoSanitize());
 
-// Simple health check — useful for confirming the server + DB are up.
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'API is running' });
+// Health check — confirms the server is up and the database is reachable.
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+    res.json({ success: true, message: 'API is running', database: 'connected' });
+  } catch {
+    res.status(503).json({ success: false, message: 'Database is unreachable', database: 'disconnected' });
+  }
 });
 
 // Make sure the database is connected before any route runs. The

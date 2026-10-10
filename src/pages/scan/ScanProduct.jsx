@@ -28,18 +28,15 @@ export default function ScanProduct() {
   const [recording, setRecording] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
-  const handleDecoded = useCallback(async (text) => {
-    // Debounce: html5-qrcode keeps firing while the same code is in
-    // frame, so ignore repeats while we're mid-lookup or already
-    // showing a result for it.
-    setLooking((wasLooking) => {
-      if (wasLooking) return wasLooking;
-      lookupSku(text);
-      return true;
-    });
-  }, []);
+  // Guards against overlapping lookups: html5-qrcode keeps firing while the
+  // same code is in frame. A ref (not state) so the check is synchronous and
+  // the scanner callback never reads a stale value.
+  const lookingRef = useRef(false);
 
-  const lookupSku = async (sku) => {
+  const lookupSku = useCallback(async (sku) => {
+    if (lookingRef.current) return;
+    lookingRef.current = true;
+    setLooking(true);
     setLookupError('');
     setSuccessMsg('');
     try {
@@ -50,9 +47,10 @@ export default function ScanProduct() {
       setProduct(null);
       setLookupError(err.response?.data?.message || `No product found for "${sku}"`);
     } finally {
+      lookingRef.current = false;
       setLooking(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,10 +65,17 @@ export default function ScanProduct() {
         .start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 240, height: 240 } },
-          (decodedText) => handleDecoded(decodedText),
+          (decodedText) => lookupSku(decodedText),
           () => {} // per-frame "nothing found" callback — expected constantly, ignore
         )
-        .then(() => !cancelled && setCameraStarted(true))
+        .then(() => {
+          // Unmounted while the camera was starting: turn it straight back off.
+          if (cancelled) {
+            scanner.stop().catch(() => {});
+            return;
+          }
+          setCameraStarted(true);
+        })
         .catch((err) => {
           if (cancelled) return;
           setCameraError(
@@ -83,12 +88,11 @@ export default function ScanProduct() {
     return () => {
       cancelled = true;
       const scanner = scannerRef.current;
-      if (scanner && cameraStarted) {
+      if (scanner?.isScanning) {
         scanner.stop().catch(() => {});
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lookupSku]);
 
   const handleManualLookup = (e) => {
     e.preventDefault();

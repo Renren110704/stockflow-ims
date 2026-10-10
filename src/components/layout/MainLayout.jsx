@@ -141,6 +141,10 @@ export default function MainLayout() {
 
   const drawerContent = (
     <div className="flex h-full flex-col">
+      {/* On mobile the fixed AppBar sits above the drawer; reserve its height
+          so the logo isn't hidden underneath it. */}
+      {isMobile && <Toolbar />}
+
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 pt-6 pb-5">
         <div

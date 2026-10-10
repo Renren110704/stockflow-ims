@@ -14,6 +14,41 @@ let Html5Qrcode;
 
 const SCANNER_ELEMENT_ID = 'sku-scanner-viewport';
 
+const NO_CAMERA_MESSAGE = 'No camera was found on this device. Use the SKU field below to look up products instead.';
+
+// html5-qrcode rejects with either an Error/DOMException or a plain string
+// like "Error getting userMedia, error = NotFoundError: ...", so match on
+// the text rather than relying on err.name.
+function describeCameraError(err) {
+  const text = String(err?.name || '') + ' ' + String(err?.message || err || '');
+  if (/NotFoundError|DevicesNotFoundError|OverconstrainedError|Requested device not found/i.test(text)) {
+    return NO_CAMERA_MESSAGE;
+  }
+  if (/NotAllowedError|PermissionDeniedError|Permission denied/i.test(text)) {
+    return 'Camera access was blocked. Allow camera permission for this site in your browser settings, then reload the page.';
+  }
+  if (/NotReadableError|TrackStartError|Could not start video source/i.test(text)) {
+    return 'The camera is being used by another app or tab. Close it and reload this page.';
+  }
+  if (/secure context|NotSupportedError|getUserMedia is not/i.test(text)) {
+    return 'Camera scanning needs a secure (HTTPS) connection and a supported browser.';
+  }
+  return 'Could not access the camera. Make sure this page has camera permission and that no other app is using it.';
+}
+
+// Checks for a video input before asking html5-qrcode to open one, so a
+// laptop/desktop without a webcam gets a clear message instead of a
+// NotFoundError from getUserMedia.
+async function hasVideoInput() {
+  if (!navigator.mediaDevices?.enumerateDevices) return true; // can't tell — let start() decide
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.some((d) => d.kind === 'videoinput');
+  } catch {
+    return true;
+  }
+}
+
 export default function ScanProduct() {
   const navigate = useNavigate();
   const scannerRef = useRef(null);
@@ -55,7 +90,16 @@ export default function ScanProduct() {
   useEffect(() => {
     let cancelled = false;
 
-    import('html5-qrcode').then((mod) => {
+    (async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError(describeCameraError('NotSupportedError'));
+        return;
+      }
+      if (!(await hasVideoInput())) {
+        if (!cancelled) setCameraError(NO_CAMERA_MESSAGE);
+        return;
+      }
+      const mod = await import('html5-qrcode');
       if (cancelled) return;
       Html5Qrcode = mod.Html5Qrcode;
       const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID, { verbose: false });
@@ -78,12 +122,10 @@ export default function ScanProduct() {
         })
         .catch((err) => {
           if (cancelled) return;
-          setCameraError(
-            'Could not access the camera. Make sure this page has camera permission and that no other app is using it.'
-          );
-          console.error(err);
+          setCameraError(describeCameraError(err));
+          console.warn('Camera unavailable:', err);
         });
-    });
+    })();
 
     return () => {
       cancelled = true;
